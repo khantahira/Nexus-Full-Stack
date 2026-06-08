@@ -3,8 +3,9 @@ import axios from 'axios';
 // 1. Create a reusable axios instance
 const API = axios.create({
   // Looks for your local or production backend URL from your .env file
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
- headers: {
+ 
+baseURL: 'https://vercel.app',
+  headers: {
     'Content-Type': 'application/json',
   }
 });
