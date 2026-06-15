@@ -4,7 +4,7 @@ import axios from 'axios';
 const API = axios.create({
   // Looks for your local or production backend URL from your .env file
  
-baseURL: 'https://nexus-full-stack-puce.vercel.app/',
+baseURL: 'https://nexus-full-stack-puce.vercel.app',
   headers: {
     'Content-Type': 'application/json',
   }
