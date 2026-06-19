@@ -18,7 +18,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/auth';
+// ✅ Hardcoded for now to fix Network Error
+const API_URL = "https://thriving-unity-production-c763.up.railway.app/api/auth";
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -84,7 +85,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// ✅ This is what was missing
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
