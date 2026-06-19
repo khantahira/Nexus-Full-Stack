@@ -27,15 +27,18 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet({ contentSecurityPolicy: false }));
 
 
+// CORS Configuration
 app.use(cors({
   origin: [
-    'http://localhost:5173',
-    process.env.FRONTEND_URL || 'https://your-vercel-frontend-url.vercel.app'
+    "https://nexus-full-stack-1038tvhwa-khan-tahira-s-projects.vercel.app",
+    "https://nexus-full-stack-web-git-master-khan-tahira-s-projects.vercel.app",
+    "http://localhost:5173",
+    "*"  // Temporary for testing
   ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "x-auth-token", "Authorization"],
   credentials: true
 }));
-app.use(express.json());
-
 // ==========================================
 // BASIC HEALTH ROUTE
 // ==========================================
