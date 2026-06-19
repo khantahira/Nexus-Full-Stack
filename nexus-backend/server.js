@@ -116,6 +116,7 @@ io.on('connection', (socket) => {
 // ==========================================
 // START SERVER
 // ==========================================
-server.listen(PORT, () => {
+// Change this block at the bottom of server.js
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Nexus Server Running on port ${PORT}`);
 });
