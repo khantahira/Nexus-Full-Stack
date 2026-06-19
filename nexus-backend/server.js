@@ -62,7 +62,7 @@ app.use(cors({
 }));
 
 // Handle Preflight Requests cleanly across all paths
-app.options('*', cors());
+app.options('/*', cors());
 
 
 // ==========================================
