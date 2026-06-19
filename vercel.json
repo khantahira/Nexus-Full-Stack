@@ -1,15 +1,10 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "nexus-backend/server.js",
-      "use": "@vercel/node"
+  "projects": {
+    "nexus-full-stack": {
+      "rootDirectory": "Nexus-main"
+    },
+    "nexus-backend": {
+      "rootDirectory": "nexus-backend"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "nexus-backend/server.js"
-    }
-  ]
-}
+  }
