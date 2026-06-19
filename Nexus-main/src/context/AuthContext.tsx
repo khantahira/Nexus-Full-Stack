@@ -1,135 +1,87 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User, UserRole, AuthContextType } from '../types';
-import toast from 'react-hot-toast';
+// Nexus-main/src/context/AuthContext.tsx
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 
-// Create Auth Context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface User {
+  name: string;
+  email: string;
+  role: string;
+}
 
-// Local storage configuration keys
-const TOKEN_KEY = 'business_nexus_token';
-const USER_STORAGE_KEY = 'business_nexus_user';
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  login: (email: string, password: string, role: string) => Promise<any>;
+  register: (name: string, email: string, password: string, role: string) => Promise<any>;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
 
-// Set your backend base connection URL directly
-const API_URL = 'http://localhost:5000/api/auth';
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const API_URL = 'http://localhost:5000/api/auth';   // Backend URL
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
 
-  // Check for an active login token on initial page load
   useEffect(() => {
-    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
-    const token = localStorage.getItem(TOKEN_KEY);
-    
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Real Backend Login Implementation
-  const login = async (email: string, password: string, role: UserRole): Promise<void> => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid credentials or user not found');
+    const loadUser = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
       }
 
-      // Save both the secure JWT token and user snapshot to browser local storage
-      localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
-      
-      setUser(data.user);
-      toast.success('Successfully logged in!');
-    } catch (error: any) {
-      toast.error(error.message);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Real Backend Registration Implementation
-  const register = async (name: string, email: string, password: string, role: UserRole): Promise<void> => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+      try {
+        const res = await axios.get(`${API_URL}/profile`, {
+          headers: { 'x-auth-token': token }
+        });
+        setUser(res.data.user);
+      } catch (err) {
+        localStorage.removeItem('token');
+        setToken(null);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Automatically sign the user in following a successful registration hook
-      localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
-      
-      setUser(data.user);
-      toast.success('Account created successfully!');
-    } catch (error: any) {
-      toast.error(error.message);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    loadUser();
+  }, [token]);
+
+  const login = async (email: string, password: string) => {
+    const res = await axios.post(`${API_URL}/login`, { email, password });
+    const { token: newToken, user: userData } = res.data;
+
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    setUser(userData);
+    return res.data;
   };
 
-  // Placeholder forgot password function
-  const forgotPassword = async (email: string): Promise<void> => {
-    toast.success('Password reset functionality simulation active.');
+  const register = async (name: string, email: string, password: string, role: string) => {
+    const res = await axios.post(`${API_URL}/register`, { name, email, password, role });
+    return res.data;
   };
 
-  // Placeholder reset password function
-  const resetPassword = async (token: string, newPassword: string): Promise<void> => {
-    toast.success('Password updated successfully.');
-  };
-
-  // Real Logout clearing browser traces
-  const logout = (): void => {
+  const logout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
     setUser(null);
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    toast.success('Logged out successfully');
   };
 
-  // Simple profile update handler placeholder
-  const updateProfile = async (userId: string, updates: Partial<User>): Promise<void> => {
-    setUser(prev => prev ? { ...prev, ...updates } : null);
-    toast.success('Profile saved');
-  };
-
-  const value = {
-    user,
-    login,
-    register,
-    logout,
-    forgotPassword,
-    resetPassword,
-    updateProfile,
-    isAuthenticated: !!user,
-    isLoading
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return (
+    <AuthContext.Provider value={{
+      user,
+      token,
+      loading,
+      login,
+      register,
+      logout,
+      isAuthenticated: !!user
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

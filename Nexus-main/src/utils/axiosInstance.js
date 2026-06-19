@@ -1,31 +1,22 @@
+// Nexus-main/src/utils/axiosInstance.ts
 import axios from 'axios';
 
-// 1. Create a reusable axios instance
-const API = axios.create({
-  // Looks for your local or production backend URL from your .env file
- 
-baseURL: 'https://nexus-full-stack-puce.vercel.app',
+const API_URL = 'http://localhost:5000/api';
+
+const axiosInstance = axios.create({
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
 });
 
-// 2. Add a request interceptor (runs automatically before every request goes out)
-API.interceptors.request.use(
-  (config) => {
-    // Look for the saved login token in the browser's storage
-    const token = localStorage.getItem('token');
-    
-    // If the token exists, inject it into the Authorization header
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// Add token to every request
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['x-auth-token'] = token;
   }
-);
+  return config;
+});
 
-export default API;
+export default axiosInstance;

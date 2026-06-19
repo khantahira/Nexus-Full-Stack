@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    // Dynamic execution environment mockup
-    console.log('🔄 Attaching cloud channel stream to production context...');
-    console.log('🍃 MASHALLAH! Nexus Platform Database Layer Initialized and Ready for Architecture Routes!');
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (err) {
-    console.error(`❌ Connection Handshake Failed: ${err.message}`);
+    console.error(`❌ MongoDB Error: ${err.message}`);
+    process.exit(1);
   }
 };
 
