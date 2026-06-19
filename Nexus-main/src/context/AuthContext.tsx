@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, ReactNode, useContext } from
 import axios from 'axios';
 
 interface User {
+  _id?: string;
   name: string;
   email: string;
   role: string;
@@ -33,18 +34,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       try {
-        const res = await axios.get(`${API_URL}/profile`, {
+        const res = await axios.get(`${API_URL.replace('/auth', '')}/me`, {
           headers: { 'x-auth-token': token }
         });
         setUser(res.data.user || res.data);
       } catch (err) {
+        console.error("Auth load error", err);
         localStorage.removeItem('token');
         setToken(null);
       } finally {
         setLoading(false);
       }
     };
-
     loadUser();
   }, [token]);
 
@@ -83,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom Hook
+// ✅ This is what was missing
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
