@@ -18,8 +18,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-// ✅ Hardcoded for now to fix Network Error
-const API_URL = "https://thriving-unity-production-c763.up.railway.app/api/auth";
+// Hardcoded Backend URL
+const API_BASE = "https://thriving-unity-production-c763.up.railway.app";
+const API_URL = `${API_BASE}/api/auth`;
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -28,6 +29,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
+  // Axios default config
+  axios.defaults.headers.common['x-auth-token'] = token || '';
+
   useEffect(() => {
     const loadUser = async () => {
       if (!token) {
@@ -35,12 +39,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       try {
-        const res = await axios.get(`${API_URL.replace('/auth', '')}/me`, {
-          headers: { 'x-auth-token': token }
-        });
+        const res = await axios.get(`${API_BASE}/me`);
         setUser(res.data.user || res.data);
-      } catch (err) {
-        console.error("Auth load error", err);
+      } catch (err: any) {
+        console.error("❌ Auth Load Error:", err.response?.data || err.message);
         localStorage.removeItem('token');
         setToken(null);
       } finally {
@@ -51,17 +53,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token]);
 
   const login = async (email: string, password: string) => {
-    const res = await axios.post(`${API_URL}/login`, { email, password });
-    const { token: newToken, user: userData } = res.data;
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
-    setUser(userData);
-    return res.data;
+    try {
+      const res = await axios.post(`${API_URL}/login`, { email, password });
+      const { token: newToken, user: userData } = res.data;
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      setUser(userData);
+      return res.data;
+    } catch (err: any) {
+      console.error("❌ Login Error:", err.response?.data || err.message);
+      throw err;
+    }
   };
 
   const register = async (name: string, email: string, password: string, role: string) => {
-    const res = await axios.post(`${API_URL}/register`, { name, email, password, role });
-    return res.data;
+    try {
+      const res = await axios.post(`${API_URL}/register`, { name, email, password, role });
+      return res.data;
+    } catch (err: any) {
+      console.error("❌ Register Error:", err.response?.data || err.message);
+      throw err;
+    }
   };
 
   const logout = () => {
