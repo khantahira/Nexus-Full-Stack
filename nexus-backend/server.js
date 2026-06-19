@@ -20,18 +20,50 @@ const PORT = process.env.PORT || 5000;
 // ==========================================
 // MIDDLEWARE
 // ==========================================
+// app.use(helmet({ contentSecurityPolicy: false }));
+
+// // ✅ Improved CORS for Vercel
+// app.use(cors({
+//   origin: true,                    // Allow all origins for now (submission ke liye)
+//   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//   allowedHeaders: ["Content-Type", "x-auth-token", "Authorization"],
+//   credentials: true
+// }));
+
+// // Handle Preflight Requests
+// app.options('*', cors());
+
+// ==========================================
+// MIDDLEWARE
+// ==========================================
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// ✅ Improved CORS for Vercel
+// ✅ Production-safe dynamic CORS whitelisting
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://vercel.app',
+  'https://vercel.app'
+];
+
 app.use(cors({
-  origin: true,                    // Allow all origins for now (submission ke liye)
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS policy'));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "x-auth-token", "Authorization"],
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
-// Handle Preflight Requests
+// Handle Preflight Requests cleanly across all paths
 app.options('*', cors());
+
 
 // ==========================================
 // BASIC HEALTH ROUTE
