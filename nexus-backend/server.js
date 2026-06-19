@@ -20,50 +20,21 @@ const PORT = process.env.PORT || 5000;
 // ==========================================
 // MIDDLEWARE
 // ==========================================
-// app.use(helmet({ contentSecurityPolicy: false }));
-
-// // ✅ Improved CORS for Vercel
-// app.use(cors({
-//   origin: true,                    // Allow all origins for now (submission ke liye)
-//   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-//   allowedHeaders: ["Content-Type", "x-auth-token", "Authorization"],
-//   credentials: true
-// }));
-
-// // Handle Preflight Requests
-// app.options('*', cors());
-
-// ==========================================
-// MIDDLEWARE
-// ==========================================
 app.use(helmet({ contentSecurityPolicy: false }));
 
-// ✅ Production-safe dynamic CORS whitelisting
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://vercel.app',
-  'https://vercel.app'
-];
-
+// ✅ Simple & Working CORS for Submission
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Blocked by CORS policy'));
-    }
-  },
+  origin: true,           // Allow all origins (best for submission)
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "x-auth-token", "Authorization"],
-  credentials: true,
-  optionsSuccessStatus: 200
+  credentials: true
 }));
 
-// Handle Preflight Requests cleanly across all paths
-app.options('/*', cors());
+app.options('*', cors());
 
+// Body Parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ==========================================
 // BASIC HEALTH ROUTE
@@ -116,7 +87,7 @@ io.on('connection', (socket) => {
 // ==========================================
 // START SERVER
 // ==========================================
-// Change this block at the bottom of server.js
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Nexus Server Running on port ${PORT}`);
+  console.log(`📡 API URL: https://thriving-unity-production-c763.up.railway.app`);
 });
