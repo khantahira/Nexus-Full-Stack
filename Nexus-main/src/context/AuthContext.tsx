@@ -18,8 +18,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-// Hardcoded Backend URL
-const API_BASE = "https://thriving-unity-production-c763.up.railway.app";
+// Hardcoded Backend URL Configuration
+const API_BASE = "http://localhost:5000";
+
 const API_URL = `${API_BASE}/api/auth`;
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,8 +30,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  // Axios default config
-  axios.defaults.headers.common['x-auth-token'] = token || '';
+  // Set Authorization Header for Axios Requests
+  if (token) {
+    axios.defaults.headers.common['x-auth-token'] = token;
+  } else {
+    delete axios.defaults.headers.common['x-auth-token'];
+  }
 
   useEffect(() => {
     const loadUser = async () => {
@@ -39,12 +44,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       try {
-        const res = await axios.get(`${API_BASE}/me`);
+        // Corrected from `${API_BASE}/me` to match your backend auth route prefix
+        const res = await axios.get(`${API_URL}/me`);
         setUser(res.data.user || res.data);
       } catch (err: any) {
         console.error("❌ Auth Load Error:", err.response?.data || err.message);
         localStorage.removeItem('token');
         setToken(null);
+        setUser(null);
       } finally {
         setLoading(false);
       }

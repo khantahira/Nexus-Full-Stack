@@ -1,6 +1,5 @@
-// ==========================================
-// NEXUS BACKEND - STABLE VERSION
-// ==========================================
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 const express = require('express');
 const http = require('http');
@@ -15,22 +14,24 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS - Simple & Working
+// ❌ Current (too open)
 app.use(cors({
   origin: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "x-auth-token", "Authorization"],
   credentials: true
 }));
 
-// Health Route
-app.get('/', (req, res) => {
-  res.json({ status: "Success", message: "Nexus Backend Running 🚀" });
-});
+// ✅ Replace with this
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    process.env.CLIENT_URL
+  ],
+  credentials: true
+}));
+app.get('/', (req, res) => res.json({ message: "Nexus Backend Running ✅" }));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -38,10 +39,8 @@ app.use('/api/meetings', require('./routes/meetings'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/payments', require('./routes/payments'));
 
-// Database
 connectDB();
 
-// Start Server
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Nexus Server Running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
