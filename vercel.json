@@ -1,12 +1,29 @@
-
 {
   "version": 2,
-  "projects": {
-    "Nexus-main": {
-      "rootDirectory": "Nexus-main"
+  "builds": [
+    {
+      "src": "Nexus-main/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
-    "nexus-backend": {
-      "rootDirectory": "nexus-backend"
+    {
+      "src": "nexus-backend/server.js",
+      "use": "@vercel/node"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/nexus-backend/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/Nexus-main/dist/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      }
+    }
+  ]
 }
