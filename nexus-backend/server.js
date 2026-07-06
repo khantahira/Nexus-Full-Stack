@@ -17,20 +17,12 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ❌ Current (too open)
+// ✅ Clean CORS Policy Fixed (Mismatched comments and duplicates removed)
 app.use(cors({
-  origin: true,
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true
 }));
 
-// ✅ Replace with this
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    process.env.CLIENT_URL
-  ],
-  credentials: true
-}));
 app.get('/', (req, res) => res.json({ message: "Nexus Backend Running ✅" }));
 
 // Routes

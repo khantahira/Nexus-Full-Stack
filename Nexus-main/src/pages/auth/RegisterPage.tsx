@@ -32,10 +32,17 @@ export const RegisterPage: React.FC = () => {
     
     try {
       await register(name, email, password, role);
-      // Redirect based on user role
-      navigate(role === 'entrepreneur' ? '/dashboard/entrepreneur' : '/dashboard/investor');
-    } catch (err) {
-      setError((err as Error).message);
+      
+      // ✅ Step 1: Force stop the loading state immediately after API success response
+      setIsLoading(false); 
+      
+      // ✅ Step 2: Use direct clean path redirect instead of multi-nested subroutes
+      navigate('/dashboard'); 
+      
+    } catch (err: any) {
+      // ✅ Step 3: Better debugging catch block for console logs
+      console.error("❌ Component Registration Exception:", err.response?.data || err.message);
+      setError(err.response?.data?.message || err.message || "Registration failed");
       setIsLoading(false);
     }
   };
