@@ -31,7 +31,8 @@ export const RegisterPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await register(name, email, password, role);
+      await register({ name, email, password, role });
+
       
       // ✅ Step 1: Force stop the loading state immediately after API success response
       setIsLoading(false); 
