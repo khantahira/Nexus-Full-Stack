@@ -1,9 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { register, login } = require('../controllers/authController');
+const { register, login, getMe, updateProfile } = require('../controllers/authController');
+const { protect } = require('../middleware/auth');
 
-// Routes definitions (Yahaan sirf req aur res handling hoti hai)
-router.post('/register', (req, res) => register(req, res));
-router.post('/login', (req, res) => login(req, res));
+// Public routes
+router.post('/register', register);
+router.post('/login', login);
+
+// Protected routes
+router.get('/me', protect, getMe);
+router.put('/profile', protect, updateProfile);
 
 module.exports = router;

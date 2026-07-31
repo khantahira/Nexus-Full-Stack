@@ -1,56 +1,64 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth'); // Secure data guard gatekeeper
+const { protect } = require('../middleware/auth'); // Correct import
 
-// Mock Database Array to simulate document uploads, versioning, and status metrics
+// Temporary in-memory storage
 let documentDatabase = [];
 
 // =========================================================================
-// 📂 1. REGISTER AN UPLOADED DOCUMENT (POST http://localhost:5000/api/documents/upload)
+// 1. UPLOAD DOCUMENT
+// POST /api/documents/upload
 // =========================================================================
-router.post('/upload', auth, (req, res) => {
+router.post('/upload', protect, (req, res) => {
     try {
         const { fileName, fileUrl, fileSize } = req.body;
 
         if (!fileName || !fileUrl) {
-            return res.status(400).json({ status: "Error", msg: "Missing core file metadata parameters." });
+            return res.status(400).json({ 
+                status: "Error", 
+                msg: "fileName and fileUrl are required." 
+            });
         }
 
-        // Creating dynamic record schema item matching database constraints
         const newDocument = {
             id: `doc_${Date.now()}`,
             fileName,
-            fileUrl, // Points to target cloud storage container location
-            fileSize: fileSize || "Unknown size",
-            uploadedBy: req.user.email, // Read identity directly from JWT block
-            status: "Pending Signature", // Workflow state tracker variable
-            signatureImage: null, // Initial placeholder value
+            fileUrl,
+            fileSize: fileSize || "Unknown",
+            uploadedBy: req.user.id,
+            status: "Pending Signature",
+            signatureImage: null,
             signedAt: null,
-            version: "v1.0"
+            version: "v1.0",
+            createdAt: new Date()
         };
 
         documentDatabase.push(newDocument);
-        console.log(`📂 Document Registered: "${fileName}" uploaded by ${req.user.email}`);
 
         return res.status(201).json({
             status: "Success",
-            msg: "Asset cataloged successfully inside document tracking layers!",
+            msg: "Document uploaded successfully!",
             document: newDocument
         });
 
     } catch (error) {
-        console.error("❌ Document Upload Route Error:", error);
-        return res.status(500).json({ status: "Error", msg: "Internal Server Error mapping file payload" });
+        console.error("Document Upload Error:", error);
+        return res.status(500).json({ 
+            status: "Error", 
+            msg: "Internal Server Error" 
+        });
     }
 });
 
 // =========================================================================
-// 📋 2. FETCH ALL ACTIVE RECORD METRICS (GET http://localhost:5000/api/documents)
+// 2. GET ALL DOCUMENTS
+// GET /api/documents
 // =========================================================================
-router.get('/', auth, (req, res) => {
+router.get('/', protect, (req, res) => {
     try {
-        // Filters documents down so users only query files relative to their profiles
-        const userFiles = documentDatabase.filter(doc => doc.uploadedBy === req.user.email);
+        const userFiles = documentDatabase.filter(
+            doc => doc.uploadedBy === req.user.id
+        );
         
         return res.status(200).json({
             status: "Success",
@@ -58,46 +66,55 @@ router.get('/', auth, (req, res) => {
             documents: userFiles
         });
     } catch (error) {
-        console.error("❌ Fetch Documents Error:", error);
-        return res.status(500).json({ status: "Error", msg: "Internal Server Error retrieving file metadata" });
+        console.error("Fetch Documents Error:", error);
+        return res.status(500).json({ 
+            status: "Error", 
+            msg: "Internal Server Error" 
+        });
     }
 });
 
 // =========================================================================
-// ✍️ 3. CRYPTOGRAPHIC E-SIGNATURE INJECTION (PATCH http://localhost:5000/api/documents/sign/:id)
+// 3. SIGN DOCUMENT
+// PATCH /api/documents/sign/:id
 // =========================================================================
-router.patch('/sign/:id', auth, (req, res) => {
+router.patch('/sign/:id', protect, (req, res) => {
     try {
         const docId = req.params.id;
-        const { signatureDataUri } = req.body; // Expects incoming base64 drawing canvas strings
+        const { signatureDataUri } = req.body;
 
         if (!signatureDataUri) {
-            return res.status(400).json({ status: "Error", msg: "Cryptographic signing matrix requires base64 canvas stream." });
+            return res.status(400).json({ 
+                status: "Error", 
+                msg: "signatureDataUri is required." 
+            });
         }
 
-        // Search object mapping targets inside simulation thread arrays
         const document = documentDatabase.find(doc => doc.id === docId);
 
         if (!document) {
-            return res.status(404).json({ status: "Error", msg: "Target document tracking asset row not found." });
+            return res.status(404).json({ 
+                status: "Error", 
+                msg: "Document not found." 
+            });
         }
 
-        // Atomic variable mutation transformations updates state permanently
         document.signatureImage = signatureDataUri;
         document.status = "Signed & Verified";
         document.signedAt = new Date().toISOString();
 
-        console.log(`✍️ Document ${docId} sealed with valid digital signature vector by ${req.user.email}`);
-
         return res.status(200).json({
             status: "Success",
-            msg: "Dynamic e-signature securely bound onto document profile!",
+            msg: "Document signed successfully!",
             updatedDocument: document
         });
 
     } catch (error) {
-        console.error("❌ E-Sign Ingestion Error:", error);
-        return res.status(500).json({ status: "Error", msg: "Internal Server Error executing signature merge arrays" });
+        console.error("Sign Document Error:", error);
+        return res.status(500).json({ 
+            status: "Error", 
+            msg: "Internal Server Error" 
+        });
     }
 });
 
