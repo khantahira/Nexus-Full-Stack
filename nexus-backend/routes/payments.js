@@ -1,94 +1,71 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth'); // Matched auth import style
-
-// Temporary in-memory storage (later we will replace with MongoDB)
-let transactionDatabase = [];
+const { protect } = require('../middleware/auth'); 
+const Transaction = require('../models/Transaction'); // Imported the MongoDB Model
 
 // =========================================================================
-// 1. PROCESS TRANSACTION
-// POST /api/payments/transaction
+// 1. PROCESS TRANSACTION (POST /api/payments/transaction)
 // =========================================================================
-router.post('/transaction', protect, (req, res) => {
+router.post('/transaction', protect, async (req, res) => {
     try {
         const { type, amount, recipientEmail } = req.body;
 
-        // Validation
         if (!type || amount === undefined) {
-            return res.status(400).json({ 
-                status: "Error", 
-                msg: "Please fill in all required fields (type, amount)." 
-            });
+            return res.status(400).json({ status: "Error", msg: "Please fill in all required fields." });
         }
 
         if (!['deposit', 'withdraw', 'transfer'].includes(type)) {
-            return res.status(400).json({ 
-                status: "Error", 
-                msg: "Invalid type. Must be deposit, withdraw, or transfer." 
-            });
+            return res.status(400).json({ status: "Error", msg: "Invalid transaction type." });
         }
 
         const parsedAmount = parseFloat(amount);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
-            return res.status(400).json({ 
-                status: "Error", 
-                msg: "Transaction amount must be a valid number greater than zero." 
-            });
+            return res.status(400).json({ status: "Error", msg: "Amount must be a valid number greater than zero." });
         }
 
         if (type === 'transfer') {
             if (!recipientEmail) {
-                return res.status(400).json({ 
-                    status: "Error", 
-                    msg: "Recipient email is required for secure account transfers." 
-                });
+                return res.status(400).json({ status: "Error", msg: "Recipient email is required for transfers." });
             }
             if (recipientEmail.toLowerCase() === req.user.email.toLowerCase()) {
-                return res.status(400).json({ 
-                    status: "Error", 
-                    msg: "Cannot transfer money to your own account." 
-                });
+                return res.status(400).json({ status: "Error", msg: "Cannot transfer money to your own account." });
             }
         }
 
-        const newTransaction = {
-            id: `tx_${Date.now()}`,
-            userEmail: req.user.email.toLowerCase(),
+        // Save directly to MongoDB database cloud instead of local array!
+        const newTransaction = await Transaction.create({
+            userEmail: req.user.email,
             type,
             amount: parsedAmount,
-            recipientEmail: type === 'transfer' ? recipientEmail.toLowerCase() : null,
-            status: "Completed",
-            createdAt: new Date()
-        };
-
-        transactionDatabase.push(newTransaction);
+            recipientEmail: type === 'transfer' ? recipientEmail : null
+        });
 
         return res.status(201).json({
             status: "Success",
-            msg: "Transaction processed successfully!",
+            msg: "Transaction saved to cloud database!",
             transaction: newTransaction
         });
 
     } catch (error) {
-        console.error("Transaction Error:", error);
-        return res.status(500).json({ 
-            status: "Error", 
-            msg: "Internal Server Error" 
-        });
+        console.error("Transaction DB Error:", error);
+        return res.status(500).json({ status: "Error", msg: "Internal Server Error" });
     }
 });
 
 // =========================================================================
-// 2. GET TRANSACTION HISTORY
-// GET /api/payments/history
+// 2. GET TRANSACTION HISTORY (GET /api/payments/history)
 // =========================================================================
-router.get('/history', protect, (req, res) => {
+router.get('/history', protect, async (req, res) => {
     try {
         const currentUserEmail = req.user.email.toLowerCase();
 
-        const userHistory = transactionDatabase.filter(tx => 
-            tx.userEmail === currentUserEmail || tx.recipientEmail === currentUserEmail
-        );
+        // Query MongoDB for records matching the active user
+        const userHistory = await Transaction.find({
+            $or: [
+                { userEmail: currentUserEmail },
+                { recipientEmail: currentUserEmail }
+            ]
+        }).sort({ createdAt: -1 }); // Newest transactions show first
 
         return res.status(200).json({
             status: "Success",
@@ -97,11 +74,8 @@ router.get('/history', protect, (req, res) => {
         });
         
     } catch (error) {
-        console.error("Fetch History Error:", error);
-        return res.status(500).json({ 
-            status: "Error", 
-            msg: "Internal Server Error" 
-        });
+        console.error("Fetch History DB Error:", error);
+        return res.status(500).json({ status: "Error", msg: "Internal Server Error" });
     }
 });
 
